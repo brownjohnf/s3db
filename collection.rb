@@ -3,15 +3,10 @@ module S3DB
     attr_reader :database, :name, :schema
 
     class << self
-      def create(database, collection_name, schema = {})
-        collection = new(database, collection_name)
-        collection.schema = schema
-
-        puts 'schema set in create'
+      def create(database, collection_name, schema)
+        collection = new(database, collection_name, schema: schema)
 
         collection.save
-
-        puts 'called save in create'
 
         collection
       end
@@ -25,9 +20,11 @@ module S3DB
       end
     end
 
-    def initialize(database, name)
+    def initialize(database, name, schema: nil)
       @database = database
       @name = name
+      @schema = schema || S3DB.backend.read_schema(@database.name, @name)
+
       # set up all the s3 bindings, etc.
       puts 'coll init'
     end

@@ -35,6 +35,10 @@ coll = db.use('other_collection')
 puts 'Available collections in ' + db.name
 puts db.show_collections.inspect
 
+# Set/Update the schema
+coll.schema = {'id' => 'Fixnum', 'name' => 'String' }
+coll.save
+
 # Insert a record into one of our dbs
 record = coll.insert({"id"=>1, "name"=>"Jack Brown"})
 coll.insert({"id"=>2, "name"=>"Emily"})

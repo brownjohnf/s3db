@@ -28,7 +28,7 @@ module S3DB
     end
 
     def valid?
-      return false unless @schema
+      raise ArgumentError, 'missing schema' unless @schema
 
       return false unless @data.keys.sort == @collection.schema.keys.sort
 

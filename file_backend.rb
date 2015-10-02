@@ -33,13 +33,23 @@ module S3DB
     end
 
     def write_collection(db_name, collection_name)
-      Dir.mkdir(collection_path(db_name, collection_name))
+      dir = collection_path(db_name, collection_name)
+
+      unless Dir.exist?(dir)
+        Dir.mkdir(dir)
+      end
     end
 
     def write_schema(db_name, collection_name, json_schema)
       File.open(schema_path(db_name, collection_name), 'w') do |f|
         f.puts json_schema
       end
+    end
+
+    def read_schema(db_name, collection_name)
+      file = schema_path(db_name, collection_name)
+
+      File.read(file)
     end
 
     def list_records(db_name, coll_name)
@@ -65,7 +75,11 @@ module S3DB
     end
 
     def bootstrap(db_name, collection_name)
-      Dir.mkdir(data_path(db_name, collection_name))
+      dir = data_path(db_name, collection_name)
+
+      unless Dir.exist?(dir)
+        Dir.mkdir(dir)
+      end
     end
 
     def delete_db(db_name)
