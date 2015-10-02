@@ -13,10 +13,6 @@ module S3DB
 
         record
       end
-
-      def find(id)
-        # WIF
-      end
     end
 
     def initialize(db, coll, data)
@@ -26,7 +22,17 @@ module S3DB
     end
 
     def save
+      raise ArgumentError, 'data does not match schema' unless valid?
+
       S3DB.backend.save_record(@database.name, @collection.name, @data['id'], @data.to_json)
+    end
+
+    def valid?
+      return false unless @data.keys.sort == @collection.schema.keys.sort
+
+      @data.each_pair do |key, value|
+        return false unless value.class == Object.const_get(@collection.schema[key])
+      end
     end
   end
 end

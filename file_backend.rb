@@ -12,7 +12,7 @@ module S3DB
       File.join(@path, db_name)
     end
 
-    def build_collection_path(db_name, collection_name)
+    def collection_path(db_name, collection_name)
       File.join(@path, db_name, collection_name)
     end
 
@@ -33,7 +33,7 @@ module S3DB
     end
 
     def write_collection(db_name, collection_name)
-      Dir.mkdir(build_collection_path(db_name, collection_name))
+      Dir.mkdir(collection_path(db_name, collection_name))
     end
 
     def write_schema(db_name, collection_name, json_schema)
@@ -42,10 +42,26 @@ module S3DB
       end
     end
 
+    def list_records(db_name, coll_name)
+      output = []
+
+      Dir.open(data_path(db_name, coll_name)) do |dir|
+        dir.each do |file|
+          output << File.read(File.join(dir.path, file)) unless File.directory?(file)
+        end
+      end
+
+      output
+    end
+
     def save_record(db_name, coll_name, filename, data)
       File.open(record_path(db_name, coll_name, filename), 'w') do |f|
         f.puts data
       end
+    end
+
+    def read_record(db_name, coll_name, filename)
+      File.read(record_path(db_name, coll_name, filename))
     end
 
     def bootstrap(db_name, collection_name)
@@ -60,8 +76,10 @@ module S3DB
       Dir.exist?(build_db_path(db_name))
     end
 
-    def list_dirs(db_name)
-      Dir.entries(build_db_path(db_name))
+    def list_collections(db_name)
+      Dir.entries(build_db_path(db_name)).select do |dir|
+        dir != '.' && dir != '..'
+      end
     end
   end
 end

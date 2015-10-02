@@ -33,11 +33,11 @@ module S3DB
     end
 
     def show_collections
-      S3DB.backend.list_dirs(@name)
+      S3DB.backend.list_collections(@name).sort
     end
 
-    def create_collection(collection)
-      Collection.create(self, collection, {})
+    def create_collection(collection, schema = {})
+      Collection.create(self, collection, schema)
     end
 
     def drop_collection(collection)
