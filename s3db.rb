@@ -19,7 +19,6 @@ S3DB::Database.drop('sample_s3db')
 # Create a new, empty db
 S3DB::Database.create('sample_s3db')
 
-
 # Load an existing db
 db = S3DB::Database.new('sample_s3db')
 # List the available collections in the db
