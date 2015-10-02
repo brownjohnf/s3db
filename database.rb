@@ -40,8 +40,12 @@ module S3DB
       Collection.create(self, collection, schema)
     end
 
+    def use(collection_name)
+      Collection.find(self, collection_name)
+    end
+
     def drop_collection(collection)
-      Collection.load(self, collection).drop
+      Collection.find(self, collection).drop
     end
   end
 end

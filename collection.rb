@@ -39,6 +39,10 @@ module S3DB
       record
     end
 
+    def exists!
+      @database.show_collections.include?(@name)
+    end
+
     def schema=(schema)
       @schema = schema
       puts 'coll schema set'

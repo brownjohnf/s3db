@@ -28,6 +28,8 @@ module S3DB
     end
 
     def valid?
+      return false unless @schema
+
       return false unless @data.keys.sort == @collection.schema.keys.sort
 
       @data.each_pair do |key, value|
