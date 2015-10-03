@@ -80,13 +80,9 @@ module S3DB
 
       raise ArgumentError, 'missing schema' unless self.class._schema.is_a?(Hash)
 
-      puts @data.keys.inspect
-      puts self.class._schema.keys.inspect
       return false unless @data.keys.map(&:to_s).sort == self.class._schema.keys.map(&:to_s).sort
 
       @data.each_pair do |key, value|
-        puts value.class.to_s
-        puts self.class._schema[key.to_s]
         return false unless value.class.to_s == self.class._schema[key.to_s]
       end
     end
