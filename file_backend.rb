@@ -38,6 +38,12 @@ module S3DB
       unless Dir.exist?(dir)
         Dir.mkdir(dir)
       end
+
+      dir = data_path(db_name, collection_name)
+
+      unless Dir.exist?(dir)
+        Dir.mkdir(dir)
+      end
     end
 
     def write_schema(db_name, collection_name, json_schema)
@@ -72,14 +78,6 @@ module S3DB
 
     def read_record(db_name, coll_name, filename)
       File.read(record_path(db_name, coll_name, filename))
-    end
-
-    def bootstrap(db_name, collection_name)
-      dir = data_path(db_name, collection_name)
-
-      unless Dir.exist?(dir)
-        Dir.mkdir(dir)
-      end
     end
 
     def delete_db(db_name)
