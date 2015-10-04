@@ -7,7 +7,7 @@ module S3DB
       #
       # db_name   - String name of the database to create. Required.
       #
-      # Returns a new S3DB::Database on success, raises an error on failure.
+      # returns a new S3DB::Database on success, raises an error on failure.
       def create(db_name)
         begin
           S3DB.backend.write_db(db_name)
@@ -24,7 +24,7 @@ module S3DB
       #
       # db_name   - String name of database to drop. Required.
       #
-      # Returns the String database name on success, raises an error on failure.
+      # returns the String database name on success, raises an error on failure.
       def drop(db_name)
         S3DB.backend.delete_db(db_name)
       end
@@ -35,7 +35,7 @@ module S3DB
     # db_name   - String name of database. Will be used in the storage path,
     #             so make sure it's something sane. Required.
     #
-    # Returns a new Database instance.1
+    # returns a new Database instance.1
     def initialize(db_name)
       @name = db_name
 
@@ -44,7 +44,7 @@ module S3DB
 
     # List all available collections in the database.
     #
-    # Returns sorted Array of Strings.
+    # returns sorted Array of Strings.
     def show_collections
       S3DB.backend.list_collections(@name).sort
     end
@@ -55,7 +55,7 @@ module S3DB
     #               its filesystem path, so use something sane. Required.
     # schema      - Hash schema for this collection. Default: {}.
     #
-    # Returns true on success.
+    # returns true on success.
     def create_collection(collection, schema = {})
       Collection.database self
       Collection.schema schema
@@ -68,14 +68,14 @@ module S3DB
     #
     # collection  - String name of collection to drop.
     #
-    # Returns the name of the collection on success.
+    # returns the name of the collection on success.
     def drop_collection(collection)
       S3DB.backend.delete_collection(@name, collection)
     end
 
     # Locate the storage location for the database.
     #
-    # Returns a String path of the database path. Will vary by backend adapter.
+    # returns a String path of the database path. Will vary by backend adapter.
     def location
       S3DB.backend.storage_location(@name)
     end
@@ -85,7 +85,7 @@ module S3DB
     # Check to ensure that the database name is valid, from the perspective of
     # the storage engine.
     #
-    # Returns a Bool.
+    # returns a Bool.
     def valid?
       S3DB.backend.valid_db?(@name)
     end

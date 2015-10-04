@@ -3,18 +3,19 @@ encoding: UTF-8
 static_path: []
 rdoc_include:
 - "."
-- "/data/s3db"
 charset: UTF-8
 exclude:
 - app_values.rb
 - s3db.sublime-project
 - s3db.sublime-workspace
+- doc
+- coverage
 hyperlink_all: false
 line_numbers: false
 locale:
 locale_dir: locale
 locale_name:
-main_page:
+main_page: README.markdown
 markup: tomdoc
 output_decoration: true
 page_dir:

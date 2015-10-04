@@ -2,7 +2,7 @@ require 'fileutils'
 
 module S3DB
   class FileBackend
-    attr_reader :path
+    attr_reader :path, :errors
 
     PATH_BLACKLIST = [
       'bin',
@@ -26,6 +26,7 @@ module S3DB
       'sys',
       'usr',
       'var',
+      'badpath', #this is just to be VERY sure we don't trash a real dir in tests
     ]
 
     class << self
@@ -35,7 +36,7 @@ module S3DB
       #
       # path  - String base path. Required.
       #
-      # Returns a new FileBackend.
+      # returns a new FileBackend.
       def create(path)
         be = new(path)
         be.save
@@ -48,7 +49,7 @@ module S3DB
       #
       # path  - String base path. Required.
       #
-      # Returns a new FileBackend.
+      # returns a new FileBackend.
       def create!(path)
         be = new(path)
         be.save!
@@ -61,79 +62,195 @@ module S3DB
       #
       # path  - String base path. Required.
       #
-      # Returns the String path that was removed.
+      # returns the String path that was removed.
       def destroy(path)
-        new(path).destroy
+        be = new(path).destroy
 
-        path
+        be
       end
 
-      # Check a path to ensure it does not violate basic sanity rules, such as
-      # being a linux system path, or having weird characters in the name.
+      # Destroy a base path, whether or not it's empty. This is dangerous, and
+      # should be used with great care.
       #
-      # path  - String path to check. Required.
+      # path  - String path to delete. Required.
       #
-      # Returns true if it checks out, false otherwise. It will raise an error
-      # for dangerous exceptions.
-      def valid_path?(path)
-        PATH_BLACKLIST.each do |p|
-          raise_error ArgumentError, "#{p} is insane!" if path =~ /#{p}/i
+      # returns itself on success, and raises an error on failure.
+      def delete(path)
+        be = new(path)
+
+        if be.valid!
+          FileUtils.rm_rf(path)
         end
 
-        path =~ /\w/
+        self
       end
     end
 
+    # Create a new FileBackend.
+    #
+    # path  - String path to use as the base storage location.
+    #
+    # returns a new FileBackend.
     def initialize(path)
+      @errors = []
+
       @path = path.strip
     end
 
-    def save
-      if !self.class.valid_path?(@path)
-        return false
+    # Check a path to ensure it does not violate basic sanity rules, such as
+    # being a linux system path, or having weird characters in the name.
+    #
+    # path  - String path to check. Required.
+    #
+    # returns true if it checks out, false otherwise. It will raise an error
+    # for dangerous exceptions.
+    def validate_path
+      PATH_BLACKLIST.each do |p|
+        @errors << "`#{p}` is insane to use as a base path!" if @path =~ /#{p}/i
       end
+
+      if @path !~ /^(\w|\/)+$/
+        @errors << "path does not match /^(\w|\/)+$/"
+      end
+    end
+
+    # Check to see whether the backend is in a valid state.
+    #
+    # returns Bool.
+    def valid?
+      @errors = []
+
+      validate_path
+
+      !@errors.any?
+    end
+
+    # Confirm that the backend is in a consistent state. Raises an error on
+    # failure.
+    #
+    # returns true on success, raises an error on failure.
+    def valid!
+      if !valid?
+        raise ArgumentError, @errors.join(', ')
+      end
+
+      true
+    end
+
+    # Save a FileBackend, which means writing its root path directory to the
+    # filesystem.
+    #
+    # returns itself on success, returns false on failure.
+    def save
+      return false unless valid?
 
       FileUtils.mkdir_p(@path)
 
-      true
+      self
     end
 
+    # Save a FileBackend, which means writing its root path directory to the
+    # filesystem.
+    #
+    # returns itself on success, raises an error on failure.
     def save!
-      if !self.class.valid_path?(path)
-        raise ArgumentError, 'invalid path!'
+      valid!
+
+      begin
+        Dir.mkdir(@path)
+      rescue Errno::EEXIST
+        raise ArgumentError, 'base path exists!'
       end
 
-      Dir.mkdir(@path)
-
-      true
+      self
     end
 
+
+    # Destroy a FileBackend basepath. The directory must be empty (which means
+    # you must destroy all collections/dbs in the basepath first).
+    #
+    # returns itself on success, false on failure.
     def destroy
-      Dir.rmdir(@path)
+      return false unless valid?
+
+      begin
+        Dir.rmdir(@path)
+      rescue Errno::ENOTEMPTY, Errno::ENOENT
+        return false
+      end
+
+      self
     end
 
+    # Destroy a FileBackend basepath. The directory must be empty (which means
+    # you must destroy all collections/dbs in the basepath first).
+    #
+    # returns itself on success, raises an error on failure.
     def destroy!
-      FileUtils.rm_rf(@path)
+      valid!
+
+      begin
+        Dir.rmdir(@path)
+      rescue Errno::ENOENT
+        raise ArgumentError, 'basepath does not exist!'
+      rescue Errno::ENOTEMPTY
+        raise ArgumentError, 'basepath not empty!'
+      end
+
+      self
     end
 
+    # Build a full path from the base path and database name.
+    #
+    # db_name   - String name of database. Required.
+    #
+    # returns a String path.
     def db_path(db_name)
       File.join(@path, db_name)
     end
 
+    # Build a full path to a collection from the base path, database name and
+    # collection name.
+    #
+    # db_name           - String name of database. Required.
+    # collection_name   - String name of collection. Required.
+    #
+    # returns a String path.
     def collection_path(db_name, collection_name)
       File.join(@path, db_name, collection_name)
     end
 
+    # Build a full path to a scema from the base path, database name and
+    # collection name.
+    #
+    # db_name           - String name of database. Required.
+    # collection_name   - String name of collection. Required.
+    #
+    # returns a String path.
     def schema_path(db_name, collection_name)
       File.join(@path, db_name, collection_name, 'schema.json')
     end
 
+    # Build a full path to the data dir from the base path, database name and
+    # collection name.
+    #
+    # db_name           - String name of database. Required.
+    # collection_name   - String name of collection. Required.
+    #
+    # returns a String path.
     def data_path(db_name, collection_name)
       File.join(@path, db_name, collection_name, 'data')
     end
 
-    def record_path(db_name, coll_name, filename)
-      File.join(@path, db_name, coll_name, 'data', "#{filename}.json")
+    # Build a full path to a record from the base path, database name,
+    # collection name, and filename.
+    #
+    # db_name           - String name of database. Required.
+    # collection_name   - String name of collection. Required.
+    #
+    # returns a String path.
+    def record_path(db_name, collection_name, filename)
+      File.join(@path, db_name, collection_name, 'data', filename)
     end
 
     def write_db(db_name)

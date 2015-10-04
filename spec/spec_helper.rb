@@ -1,5 +1,11 @@
 require 'rubygems'
 require 'rspec'
+require 'simplecov'
+
+SimpleCov.start do
+  add_filter '/spec'
+end
+
 require_relative '../s3db'
 
 TEST_DB_BASE_PATH = '/tmp/s3dbtestpath'
