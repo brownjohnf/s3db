@@ -1,4 +1,5 @@
 # s3DB
+[![Build Status](https://travis-ci.org/brownjohnf/s3db.svg?branch=master)](https://travis-ci.org/brownjohnf/s3db)
 
 ## Usage
 
