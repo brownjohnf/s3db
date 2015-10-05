@@ -76,8 +76,8 @@ module S3DB
     # Locate the storage location for the database.
     #
     # returns a String path of the database path. Will vary by backend adapter.
-    def location
-      S3DB.backend.storage_location(@name)
+    def path
+      S3DB.backend.db_path(@name)
     end
 
     private
@@ -87,7 +87,7 @@ module S3DB
     #
     # returns a Bool.
     def valid?
-      S3DB.backend.valid_db?(@name)
+      S3DB.backend.db_exist?(@name)
     end
   end
 end

@@ -540,5 +540,14 @@ RSpec.describe S3DB::FileBackend do
         expect(subject.delete_collection(dbname, coll_name)).to eq []
       end
     end
+
+    describe '#exist?' do
+      it 'returns true when the db exists' do
+        subject.save
+        subject.write_db(dbname)
+
+        expect(subject.db_exist?(dbname)).to be true
+      end
+    end
   end
 end

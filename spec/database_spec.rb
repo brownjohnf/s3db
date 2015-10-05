@@ -113,18 +113,20 @@ RSpec.describe S3DB::Database do
       end
     end
 
-    describe '#location' do
-      it 'calls backend.delete_collection' do
-        expect(S3DB.backend).to \
-          receive(:storage_location).and_call_original
+    describe '#path' do
+      it 'calls backend.db_path' do
+        subject # needed to setup initial calls to db_path
 
-        expect(subject.location).to eq '/tmp/test'
+        expect(S3DB.backend).to \
+          receive(:db_path).with('test').and_call_original
+
+        expect(subject.path).to eq '/tmp/test'
       end
     end
 
     describe 'private #valid?' do
       it 'returns true if backend.valid_db? is true' do
-        allow(S3DB.backend).to receive(:valid_db?).and_return(true)
+        allow(S3DB.backend).to receive(:db_exist?).and_return(true)
 
         expect(subject.__send__(:valid?)).to be true
       end
