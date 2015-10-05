@@ -2,9 +2,6 @@ module S3DB
   class Collection
     attr_reader :database, :name, :schema
 
-    SCHEMA = {}
-    DATABASE = nil
-
     class << self
       attr_accessor :_database
       attr_accessor :_schema
@@ -17,8 +14,8 @@ module S3DB
       self._database = db
     end
 
-    def self.schema(schema)
-      self._schema = schema.merge('id' => 'String')
+    def self.schema(sch)
+      self._schema = sch.merge('id' => 'String')
     end
 
     def self.collection(collection)
@@ -44,8 +41,8 @@ module S3DB
     end
 
     def self.all
-      S3DB.backend.list_records(_database.name, _collection).map do |f|
-        JSON.parse(f)
+      S3DB.backend.list_records(_database.name, _collection).map do |file|
+        new(JSON.parse(S3DB.backend.read_record(_database.name, _collection, file)))
       end
     end
 
@@ -62,7 +59,20 @@ module S3DB
 
       raise ArgumentError, 'data does not match schema' unless _valid?
 
-      S3DB.backend.save_record(self.class._database.name, self.class._collection, @data['id'], @data.to_json)
+      S3DB.backend.write_record(
+        self.class._database.name,
+        self.class._collection,
+        filename,
+        @data.to_json
+      )
+    end
+
+    def filename
+      '%s.json' % [id]
+    end
+
+    def id
+      @data['id']
     end
 
     def set_id
@@ -89,11 +99,11 @@ module S3DB
     def validate; end
 
     def exists!
-      @database.show_collections.include?(@name)
+      @database.list_collections.include?(@name)
     end
 
     def find(id)
-      res = S3DB.backend.read_record(self.class._database.name, self.class._collection, id)
+      res = S3DB.backend.read_record(self.class._database.name, self.class._collection, filename)
 
       JSON.parse(res)
     end
