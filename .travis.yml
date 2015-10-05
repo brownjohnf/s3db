@@ -1,5 +1,6 @@
 language: ruby
 rvm:
  - "2.2.2"
-script: bin/rspec
-after_success: bundle exec ruby demo.rb
+script:
+- bin/rspec
+- bundle exec ruby demo.rb
