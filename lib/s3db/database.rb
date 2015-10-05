@@ -13,8 +13,6 @@ module S3DB
           S3DB.backend.write_db(db_name)
         rescue Errno::EEXIST
           raise ArgumentError, 'database exists!'
-
-          exit 1
         end
 
         new(db_name)

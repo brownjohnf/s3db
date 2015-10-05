@@ -6,7 +6,7 @@ RSpec.describe S3DB::Database do
   end
 
   after :all do
-    S3DB::Database.drop('test')
+    S3DB.backend.delete!('test') # force-drop
   end
 
   describe '::create' do

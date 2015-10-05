@@ -206,7 +206,6 @@ module S3DB
     #
     # returns a String path.
     def db_path(db_name)
-      puts 'in db_path'
       File.join(@path, db_name)
     end
 

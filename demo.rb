@@ -1,15 +1,16 @@
-require_relative 's3db'
+require_relative 'lib/s3db'
 
 module DummyApp
 
   # initialize
   # Set the backend to be local file storage
   S3DB.backend = S3DB::FileBackend.new('/tmp')
-  # Drop any existing test db
-  S3DB::Database.drop('sample_s3db')
+  # Fore drop any existing test db
+  S3DB::FileBackend.delete('/tmp/sample_s3db')
+  puts `tree /tmp/sample_s3db`
   # Create/ensure presence of a new, empty db
   S3DB::Database.create('sample_s3db')
-
+  # load the db
   DB = S3DB::Database.new('sample_s3db')
 
   # start building your app models
