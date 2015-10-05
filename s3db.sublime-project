@@ -1,8 +1,43 @@
 {
-	"folders":
-	[
-		{
-			"path": "."
-		}
-	]
+  "folders":
+  [
+    {
+      "follow_symlinks": true,
+      "path": ".",
+      "folder_exclude_patterns":
+      [
+        ".git",
+        ".sass-cache",
+        ".tmp",
+        "dist",
+        "node_modules",
+        "vendor",
+        "tmp/",
+        "public/doc"
+      ],
+      "file_exclude_patterns":
+      [
+        "*bundle.js"
+      ]
+    }
+  ],
+  "settings": {
+    "translate_tabs_to_spaces" : true,
+    "tab_size" : 2,
+    "binary_file_patterns": [
+      "coverage/*",
+      "doc/*",
+      "log/*",
+      ".irb_history",
+      "*.pdf",
+      "*.ttf",
+      "*.eot",
+      "*.svg",
+      "*.woff",
+      "*.gif",
+      "*.png",
+      "*.min.js",
+      "*.sql"
+    ],
+  }
 }
