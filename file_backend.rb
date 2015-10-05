@@ -253,12 +253,25 @@ module S3DB
       File.join(@path, db_name, collection_name, 'data', filename)
     end
 
+    # Write a directory to disk for the name of the database. Will fail if the
+    # database already exists.
+    #
+    # db_name   - String name of database. Required.
+    #
+    # returns db_name on success; raises an error on failure.
     def write_db(db_name)
       Dir.mkdir(db_path(db_name))
 
       db_name
     end
 
+    # Write a directory to disk for the name of the collection. Will ignore the
+    # write if the directory exists.
+    #
+    # db_name           - String name of database. Required.
+    # collection_name   - String name of collection. Required.
+    #
+    # returns collection_name on success; raises an error on failure.
     def write_collection(db_name, collection_name)
       dir = collection_path(db_name, collection_name)
 
@@ -275,62 +288,165 @@ module S3DB
       collection_name
     end
 
-    def write_schema(db_name, collection_name, json_schema)
+    # Write a file to disk for the schema for a database/collection.
+    #
+    # db_name           - String name of database. Required.
+    # collection_name   - String name of collection. Required.
+    # schema            - String schema contents. Required.
+    #
+    # returns the schema on success; raises an error on failure.
+    def write_schema(db_name, collection_name, schema)
       File.open(schema_path(db_name, collection_name), 'w') do |f|
-        f.puts json_schema
+        f.puts schema
       end
 
-      true
+      schema
     end
 
-    def read_schema(db_name, collection_name)
-      file = schema_path(db_name, collection_name)
+    # Write a record to a database/collection. The record can be in any format.
+    # No parsing of the file is performed. Data must be sent as a string.
+    #
+    # db_name           - String name of database. Required.
+    # collection_name   - String name of collection. Required.
+    # filename          - String name of file to write, w/extension. Required.
+    # data              - String data to write to the file. Required.
+    #
+    # returns the data written.
+    def write_record(db_name, coll_name, filename, data)
+      raise ArgumentError, 'data must be a string!' unless data.is_a?(String)
 
-      File.read(file)
+      File.open(record_path(db_name, coll_name, filename), 'w') do |f|
+        f.puts data
+      end
+
+      data
     end
 
+    # List all available collections in a database.
+    #
+    # db_name   - String name of database to look in. Required.
+    #
+    # returns an Array of String collection names.
+    def list_collections(db_name)
+      Dir.entries(db_path(db_name)).select do |dir|
+        !File.directory?(dir)
+      end
+    end
+
+    # List all available records for a database/collection.
+    #
+    # db_name           - String name of database to look in. Required.
+    # collection_name   - String name of collection to look in. Required.
+    #
+    # returns an Array of String record file names.
     def list_records(db_name, coll_name)
       output = []
 
       Dir.open(data_path(db_name, coll_name)) do |dir|
         dir.each do |file|
-          output << File.read(File.join(dir.path, file)) unless File.directory?(file)
+          output << file unless File.directory?(file)
         end
       end
 
       output
     end
 
-    def save_record(db_name, coll_name, filename, data)
-      File.open(record_path(db_name, coll_name, filename), 'w') do |f|
-        f.puts data
+    # Read the contents of the schema file.
+    #
+    # db_name           - String name of database to look in. Required.
+    # collection_name   - String name of collection to look in. Required.
+    #
+    # returns the String contents of the schema file. Raises an error if the
+    # file is missing.
+    def read_schema(db_name, collection_name)
+      file = schema_path(db_name, collection_name)
+
+      begin
+        File.read(file)
+      rescue Errno::ENOENT
+        raise ArgumentError, 'schema does not exist!'
       end
     end
 
+    # Read the contents of a record in a database/collection
+    #
+    # db_name           - String name of database to look in. Required.
+    # collection_name   - String name of collection to look in. Required.
+    # filename          - String name of the file to read w/extension. Required.
+    #
+    # returns the String contents of the record file. Raises an error if the
+    # file is missing.
     def read_record(db_name, coll_name, filename)
-      File.read(record_path(db_name, coll_name, filename))
+      file = record_path(db_name, coll_name, filename)
+
+      begin
+        File.read(file)
+      rescue Errno::ENOENT
+        raise ArgumentError, 'record does not exist!'
+      end
     end
 
+    # Delete a database directory from disk. Will only succed if the database is
+    # empty.
+    #
+    # db_name           - String name of database to remove. Required.
+    #
+    # returns an Array of the databases deleted, or empty if the database did
+    # not exist.
     def delete_db(db_name)
-      FileUtils.rm_rf(db_path(db_name))
+      path = db_path(db_name)
 
-      db_name
+      if Dir.exist?(path)
+        begin
+          Dir.rmdir(path)
+        rescue Errno::ENOTEMPTY
+          raise ArgumentError, 'database is not empty!'
+        end
+
+        return [db_name]
+      end
+
+      []
     end
 
+    # Delete a collection directory from disk. Will only succed if the
+    # collection is empty.
+    #
+    # db_name           - String name of database to remove. Required.
+    # collection_name   - String name of collection to remove. Required.
+    #
+    # returns an Array of the databases deleted, or empty if the database did
+    # not exist.
     def delete_collection(db_name, collection_name)
-      FileUtils.rm_rf(collection_path(db_name, collection_name))
+      path = collection_path(db_name, collection_name)
 
-      collection_name
+      if File.exist?(schema_path(db_name, collection_name))
+        File.delete(schema_path(db_name, collection_name))
+      end
+
+      if Dir.exist?(data_path(db_name, collection_name))
+        begin
+          Dir.rmdir(data_path(db_name, collection_name))
+        rescue Errno::ENOTEMPTY
+          raise ArgumentError, 'collection/data is not empty!'
+        end
+      end
+
+      if Dir.exist?(path)
+        begin
+          Dir.rmdir(path)
+        rescue Errno::ENOTEMPTY
+          raise ArgumentError, 'collection is not empty!'
+        end
+
+        return [collection_name]
+      end
+
+      []
     end
 
     def valid_db?(db_name)
       Dir.exist?(db_path(db_name))
-    end
-
-    def list_collections(db_name)
-      Dir.entries(db_path(db_name)).select do |dir|
-        dir != '.' && dir != '..'
-      end
     end
 
     def storage_location(db_name)
