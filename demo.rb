@@ -7,7 +7,6 @@ module DummyApp
   S3DB.backend = S3DB::FileBackend.new('/tmp')
   # Fore drop any existing test db
   S3DB::FileBackend.delete('/tmp/sample_s3db')
-  puts `tree /tmp/sample_s3db`
   # Create/ensure presence of a new, empty db
   S3DB::Database.create('sample_s3db')
   # load the db
@@ -26,7 +25,18 @@ module DummyApp
   end
   Word.write
 
-  words = `cat /usr/share/dict/cracklib-small | head -n 100`.chomp.split("\n")
+  words = [
+    'abreaction',
+    'abreactions',
+    'abreast',
+    'abridge',
+    'abridged',
+    'abridges',
+    'abridging',
+    'abridgment',
+    'abroad',
+    'abrogate',
+  ]
 
   words[0..4].each do |word|
     Word.create({
@@ -62,27 +72,3 @@ module DummyApp
 
   puts Person.all
 end
-
-=begin
-# Create a new collection in the database
-coll = db.create_collection('sample_collection', {'id' => 'String', 'name' => 'String'})
-db.create_collection('words')
-coll.insert({"id"=>'2', "name"=>"Emily"})
-
-# List the available collections in the db (should be one now)
-puts '==> Available collections in ' + db.name
-puts db.show_collections
-
-# switch collections
-coll = db.use('words')
-
-# Set/Update the schema
-coll.schema = {'id' => 'String', 'word' => 'String' }
-coll.save
-
-
-puts '==> All records in ' + coll.name
-puts coll.all
-=end
-
-puts `tree /tmp/sample_s3db`
