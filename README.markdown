@@ -24,7 +24,11 @@ directory.
 ## TODO
 
 * Finish tests
+* Refactor backends into submodules
+* Add tests for demo
 * Build/test query interface
 * Build/test s3 backend
+* Add parity tests for backend outputs
+* Set up docs/webpage
 * Build/test API server
 * Benchmark/optimize

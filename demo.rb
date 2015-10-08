@@ -12,6 +12,18 @@ module DummyApp
   # load the db
   DB = S3DB::Database.new('sample_s3db')
 
+  # DB.migrate do
+  #   collection 'words' do
+  #     string :id
+  #     string :word
+  #   end
+
+  #   collection 'persons' do
+  #     string :name
+  #     array :friends
+  #   end
+  # end
+
   # start building your app models
   class Word < S3DB::Collection
     schema({

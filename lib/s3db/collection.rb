@@ -1,6 +1,6 @@
 module S3DB
   class Collection
-    attr_reader :database, :name, :schema, :data
+    attr_reader :data
 
     class << self
       attr_accessor :_database
@@ -8,6 +8,8 @@ module S3DB
       attr_accessor :_collection
       attr_accessor :_id_generator
       attr_accessor :_id_field
+
+      # TODO: set some defaults here
     end
 
     def self.database(db)
@@ -56,11 +58,12 @@ module S3DB
 
     def initialize(data)
       @data = data
+
+      set_id
     end
 
     def save
-      set_id
-
+      # TODO: make this not raise an error, and add a save! method
       raise ArgumentError, 'data does not match schema' unless _valid?
 
       S3DB.backend.write_record(
@@ -69,10 +72,19 @@ module S3DB
         filename,
         @data.to_json
       )
+
+      self
+    end
+
+    def update(data)
+      data['id'] = @data['id']
+      @data = data
+
+      set_id && save
     end
 
     def filename
-      '%s.json' % [id]
+      '%s.json' % [@id]
     end
 
     def id
@@ -82,11 +94,15 @@ module S3DB
     def set_id
       if @data['id']
         @id = @data['id']
+      elsif self.class._id_generator.nil? || self.class._id_field.nil?
+        @id = UUIDTools::UUID.random_create.to_s
       else
-        @id = self.class._id_generator.call(@data[self.class._id_field]) rescue UUIDTools::UUID.random_create.to_s
-
-        @data['id'] = @id
+        @id = self.class._id_generator.call(@data[self.class._id_field])
       end
+
+      @data['id'] = @id
+
+      @id
     end
 
     def _valid?
@@ -111,5 +127,7 @@ module S3DB
 
       JSON.parse(res)
     end
+
+    # TODO: implement an missing method method for getter/setters
   end
 end
