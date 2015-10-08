@@ -445,6 +445,46 @@ module S3DB
       []
     end
 
+    # Delete a collection directory from disk. Will only succed if the
+    # collection is empty.
+    #
+    # db_name           - String name of database to remove. Required.
+    # collection_name   - String name of collection to remove. Required.
+    #
+    # returns an Array of the databases deleted, or empty if the database did
+    # not exist.
+    def delete_record(db_name, collection_name, filename)
+      path = record_path(db_name, collection_name, filename)
+
+      begin
+        File.delete(path)
+      rescue Errno::ENOENT
+        return ''
+      end
+
+      filename
+    end
+
+    # Delete a collection directory from disk. Will only succed if the
+    # collection is empty.
+    #
+    # db_name           - String name of database to remove. Required.
+    # collection_name   - String name of collection to remove. Required.
+    #
+    # returns an Array of the databases deleted, or empty if the database did
+    # not exist.
+    def delete_record!(db_name, collection_name, filename)
+      path = record_path(db_name, collection_name, filename)
+
+      begin
+        File.delete(path)
+      rescue Errno::ENOENT
+        raise ArgumentError, 'record does not exist!'
+      end
+
+      filename
+    end
+
     def db_exist?(db_name)
       Dir.exist?(db_path(db_name))
     end

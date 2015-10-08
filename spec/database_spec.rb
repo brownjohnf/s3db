@@ -2,11 +2,12 @@ require 'spec_helper'
 
 RSpec.describe S3DB::Database do
   before :all do
-    S3DB.backend = S3DB::FileBackend.new('/tmp')
+    S3DB.backend = S3DB::FileBackend.new(TEST_DB_BASE_PATH)
+    S3DB.backend.delete_db('test')
   end
 
   after :all do
-    S3DB.backend.delete!('test') # force-drop
+    S3DB.backend.delete_db('test') # force-drop
   end
 
   describe '::create' do
@@ -120,7 +121,7 @@ RSpec.describe S3DB::Database do
         expect(S3DB.backend).to \
           receive(:db_path).with('test').and_call_original
 
-        expect(subject.path).to eq '/tmp/test'
+        expect(subject.path).to eq TEST_DB_BASE_PATH + '/' + dbname
       end
     end
 

@@ -2,6 +2,7 @@ require 'spec_helper'
 
 RSpec.describe S3DB::FileBackend do
   before :all do
+    S3DB::FileBackend.delete(TEST_DB_BASE_PATH)
     S3DB::FileBackend.new(TEST_DB_BASE_PATH).delete_db('testdb')
   end
 
@@ -538,6 +539,72 @@ RSpec.describe S3DB::FileBackend do
       it 'returns an empty array if there was no collection' do
         subject.delete_collection(dbname, coll_name)
         expect(subject.delete_collection(dbname, coll_name)).to eq []
+      end
+    end
+
+    describe '#delete_record' do
+      let(:record_name) { 'testrecord.json' }
+      let(:record_data) do
+        {
+          id: 'testrecord',
+          name: 'jack',
+        }.to_json + "\n"
+      end
+
+      after :each do
+        S3DB::FileBackend.delete(TEST_DB_BASE_PATH)
+      end
+
+      before :each do
+        subject.save
+        subject.write_db(dbname)
+        subject.write_collection(dbname, coll_name)
+        subject.write_record(dbname, coll_name, record_name, record_data)
+      end
+
+      it 'deletes the record' do
+        expect(subject.read_record(dbname, coll_name, record_name)).to eq(record_data)
+        expect(subject.delete_record(dbname, coll_name, record_name)).to eq(record_name)
+        expect(File.exist?(subject.record_path(dbname, coll_name, record_name))).to \
+          be false
+      end
+
+      it 'returns an empty string on missing record' do
+        subject.delete_record(dbname, coll_name, 'rando')
+      end
+    end
+
+    describe '#delete_record' do
+      let(:record_name) { 'testrecord.json' }
+      let(:record_data) do
+        {
+          id: 'testrecord',
+          name: 'jack',
+        }.to_json + "\n"
+      end
+
+      after :each do
+        S3DB::FileBackend.delete(TEST_DB_BASE_PATH)
+      end
+
+      before :each do
+        subject.save
+        subject.write_db(dbname)
+        subject.write_collection(dbname, coll_name)
+        subject.write_record(dbname, coll_name, record_name, record_data)
+      end
+
+      it 'deletes the record' do
+        expect(subject.read_record(dbname, coll_name, record_name)).to eq(record_data)
+        expect(subject.delete_record!(dbname, coll_name, record_name)).to eq(record_name)
+        expect(File.exist?(subject.record_path(dbname, coll_name, record_name))).to \
+          be false
+      end
+
+      it 'raises an error on a missing record' do
+        expect do
+          subject.delete_record!(dbname, coll_name, 'rando')
+        end.to raise_error ArgumentError, 'record does not exist!'
       end
     end
 

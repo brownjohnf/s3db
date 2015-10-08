@@ -1,6 +1,6 @@
 module S3DB
   class Collection
-    attr_reader :database, :name, :schema
+    attr_reader :database, :name, :schema, :data
 
     class << self
       attr_accessor :_database
@@ -47,7 +47,11 @@ module S3DB
     end
 
     def self.create(data)
-      new(data).save
+      record = new(data)
+
+      record.save
+
+      record
     end
 
     def initialize(data)
