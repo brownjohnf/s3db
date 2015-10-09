@@ -95,6 +95,35 @@ RSpec.describe S3DB::Collection do
     end
   end
 
+  describe '::find' do
+    before :each do
+      S3DB::Collection.database(@db)
+      S3DB::Collection.collection('testcoll')
+      S3DB::Collection.schema({'test' => 'String'})
+      S3DB::Collection.write
+      @record = S3DB::Collection.create({'test' => 'true'})
+    end
+
+    after :each do
+      S3DB.backend.delete_record(@db.name, 'testcoll', @record.filename)
+      S3DB.backend.delete_collection(@db.name, 'testcoll')
+    end
+
+    it 'finds an existing record' do
+      expect(S3DB::Collection.find(@record.filename).data).to eq(@record.data)
+    end
+
+    it 'returns a record' do
+      expect(S3DB::Collection.find(@record.filename).class).to eq S3DB::Collection
+    end
+
+    it 'raises an error on a missing record' do
+      expect do
+        S3DB::Collection.find('rando')
+      end.to raise_error ArgumentError, 'record does not exist!'
+    end
+  end
+
   describe '::create' do
     before :each do
       S3DB::Collection.database(@db)
@@ -233,6 +262,31 @@ RSpec.describe S3DB::Collection do
 
       it 'returns the id' do
         expect(subject.set_id).to eq subject.id
+      end
+    end
+
+    describe '#validate' do
+      it 'exists' do
+        expect(subject).to respond_to(:validate)
+      end
+    end
+
+    describe '#_valid?' do
+      it 'calls validate' do
+        expect(subject).to receive(:validate)
+        subject.__send__(:_valid?)
+      end
+
+      it 'returns false if the keys do not match' do
+        data.delete('name')
+        subject.instance_variable_set(:@data, data)
+        expect(subject.__send__(:_valid?)).to be false
+      end
+
+      it 'returns false if the values are of the wrong type' do
+        data['name'] = 123
+        subject.instance_variable_set(:@data, data)
+        expect(subject.__send__(:_valid?)).to be false
       end
     end
   end

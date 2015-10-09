@@ -44,8 +44,18 @@ module S3DB
 
     def self.all
       S3DB.backend.list_records(_database.name, _collection).map do |file|
-        new(JSON.parse(S3DB.backend.read_record(_database.name, _collection, file)))
+        new(
+          JSON.parse(
+            S3DB.backend.read_record(_database.name, _collection, file)
+          )
+        )
       end
+    end
+
+    def self.find(filename)
+      res = S3DB.backend.read_record(_database.name, _collection, filename)
+
+      new(JSON.parse(res))
     end
 
     def self.create(data)
@@ -105,29 +115,22 @@ module S3DB
       @id
     end
 
+    def validate; end
+
+    # TODO: implement an missing method method for getter/setters
+
+    private
+
     def _valid?
       validate
-
-      raise ArgumentError, 'missing schema' unless self.class._schema.is_a?(Hash)
 
       return false unless @data.keys.map(&:to_s).sort == self.class._schema.keys.map(&:to_s).sort
 
       @data.each_pair do |key, value|
         return false unless value.class.to_s == self.class._schema[key.to_s]
       end
+
+      true
     end
-    def validate; end
-
-    def exists!
-      @database.list_collections.include?(@name)
-    end
-
-    def find(id)
-      res = S3DB.backend.read_record(self.class._database.name, self.class._collection, filename)
-
-      JSON.parse(res)
-    end
-
-    # TODO: implement an missing method method for getter/setters
   end
 end
