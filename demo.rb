@@ -12,16 +12,30 @@ module DummyApp
   # load the db
   DB = S3DB::Database.new('sample_s3db')
 
-  # DB.migrate do
-  #   collection 'words' do
-  #     string :id
-  #     string :word
-  #   end
 
-  #   collection 'persons' do
-  #     string :name
-  #     array :friends
+  # TODO: desired bootstrapping process:
+  # class FileDbBackend
+  #   class << self
+  #     attr_accessor :backend
+
+  #     @backend = S3DB::FileBackend.new('/tmp')
   #   end
+  # end
+  # S3DB::Database.new(FileDbBackend.backend, 'sample_s3db') do |database|
+  #   S3DB::Collection.new(database, 'words') do |collection|
+  #     collection.schema do
+  #       string :id
+  #       string :word
+  #     end
+
+  #     collection.migrate do
+  #       array :related_words
+  #     end
+  #   end
+  # end
+  # class Word < S3DB::Record
+  #   database database
+  #   collection collection
   # end
 
   # start building your app models

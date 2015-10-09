@@ -3,3 +3,5 @@ app_values.rb
 bin
 doc
 coverage
+*.gem
+
