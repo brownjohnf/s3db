@@ -279,14 +279,6 @@ RSpec.describe S3DB::FileBackend do
 
         expect(Dir.exist?(TEST_DB_BASE_PATH + '/' + dbname)).to be true
       end
-
-      it 'raises an error if the path already exists' do
-        subject.save
-        subject.write_db(dbname)
-        expect(Dir.exist?(TEST_DB_BASE_PATH + '/' + dbname)).to be true
-
-        expect { subject.write_db(dbname) }.to raise_error Errno::EEXIST
-      end
     end
 
     describe '#write_collection' do

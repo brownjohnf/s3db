@@ -1,7 +1,7 @@
 require 'fileutils'
 
 module S3DB
-  class FileBackend
+  class FileBackend < Backend
     attr_reader :path, :errors
 
     PATH_BLACKLIST = [
@@ -260,7 +260,7 @@ module S3DB
     #
     # returns db_name on success; raises an error on failure.
     def write_db(db_name)
-      Dir.mkdir(db_path(db_name))
+      FileUtils.mkdir_p(db_path(db_name))
 
       db_name
     end
