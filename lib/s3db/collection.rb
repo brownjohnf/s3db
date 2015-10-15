@@ -1,136 +1,70 @@
 module S3DB
   class Collection
-    attr_reader :data
+    attr_reader :database, :name
 
     class << self
-      attr_accessor :_database
-      attr_accessor :_schema
-      attr_accessor :_collection
-      attr_accessor :_id_generator
-      attr_accessor :_id_field
+      # Create a new collection.
+      #
+      # database  - Database attached to collection. Required.
+      # name      - String name of the collection. Required.
+      #
+      # returns a new Collection.
+      def create(database, name)
+        collection = new(database, name)
+        collection.save
 
-      # TODO: set some defaults here
-    end
-
-    def self.database(db)
-      self._database = db
-    end
-
-    def self.schema(sch)
-      self._schema = sch.merge('id' => 'String')
-    end
-
-    def self.collection(collection)
-      self._collection = Utils.sanitize(collection)
-    end
-
-    def self.id_generator(proc)
-      self._id_generator = proc
-    end
-
-    def self.id_field(field)
-      self._id_field = field
-    end
-
-    # this actually writes the files necessary to have a functional db/coll
-    def self.write
-      raise ArgumentError, 'missing database' if self._database.nil?
-      raise ArgumentError, 'missing schema' if self._schema.nil?
-      raise ArgumentError, 'missing collection name' if self._collection.nil?
-
-      S3DB.backend.write_collection(_database.name, _collection)
-      S3DB.backend.write_schema(_database.name, _collection, _schema.to_json)
-    end
-
-    def self.all
-      S3DB.backend.list_records(_database.name, _collection).map do |file|
-        new(
-          JSON.parse(
-            S3DB.backend.read_record(_database.name, _collection, file)
-          )
-        )
+        collection
       end
     end
 
-    def self.find(filename)
-      res = S3DB.backend.read_record(_database.name, _collection, filename)
+    # Instantiate a new collection, without writing it to disk.
+    #
+    # database  - Database attached to collection. Required.
+    # name      - String name of the collection. Required.
+    #
+    # returns a new Collection, validated but unwritten.
+    def initialize(database, name)
 
-      new(JSON.parse(res))
+      # Store the database and collection name
+      @database = database
+      @name = Utils.sanitize(name)
+
+      # Sanity check the database and collection name
+      validate!
+
+      # Yield self for configs, if people want to.
+      yield self if block_given?
     end
 
-    def self.create(data)
-      record = new(data)
+    # Validate a collection to ensure that it's sane.
+    #
+    # returns nil on success; raises an error on failure.
+    def validate!
+      unless @database.is_a?(S3DB::Database)
+        raise ArgumentError, 'database must be an S3DB::Database!'
+      end
 
-      record.save
+      unless @name.is_a?(String)
+        raise ArgumentError, 'name must be a String!'
+      end
 
-      record
+      nil
     end
 
-    def initialize(data)
-      @data = data
-
-      set_id
+    def list_records
+      @database.backend.list_records(@database.name, @name).map do |file|
+        @database.backend.read_record(@database.name, @name, file)
+      end
     end
 
+    # Write the collection skeleton to disk.
+    #
+    # Returns nil.
     def save
-      # TODO: make this not raise an error, and add a save! method
-      raise ArgumentError, 'data does not match schema' unless _valid?
+      @database.backend.write_collection(@database.name, @name)
+      @database.backend.write_schema(@database.name, @name, @schema.to_json)
 
-      S3DB.backend.write_record(
-        self.class._database.name,
-        self.class._collection,
-        filename,
-        @data.to_json
-      )
-
-      self
-    end
-
-    def update(data)
-      data['id'] = @data['id']
-      @data = data
-
-      set_id && save
-    end
-
-    def filename
-      '%s.json' % [@id]
-    end
-
-    def id
-      @data['id']
-    end
-
-    def set_id
-      if @data['id']
-        @id = @data['id']
-      elsif self.class._id_generator.nil? || self.class._id_field.nil?
-        @id = UUIDTools::UUID.random_create.to_s
-      else
-        @id = self.class._id_generator.call(@data[self.class._id_field])
-      end
-
-      @data['id'] = @id
-
-      @id
-    end
-
-    def validate; end
-
-    # TODO: implement an missing method method for getter/setters
-
-    private
-
-    def _valid?
-      validate
-
-      return false unless @data.keys.map(&:to_s).sort == self.class._schema.keys.map(&:to_s).sort
-
-      @data.each_pair do |key, value|
-        return false unless value.class.to_s == self.class._schema[key.to_s]
-      end
-
-      true
+      nil
     end
   end
 end
